@@ -1,6 +1,6 @@
-.PHONY: plugin
-plugin: test
-	go build -buildmode=plugin golangci-lint-plugin/plugin.go
+.PHONY: build
+build: test
+	go build
 
 .PHONY: clean
 clean:
@@ -10,3 +10,6 @@ clean:
 test:
 	go test ./...
 
+.PHONY: run
+run: build
+	go vet -vettool=./envtest-linter

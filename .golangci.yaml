@@ -1,0 +1,5 @@
+linters-settings:
+ custom:
+  envtest-linter:
+   path: plugin.so
+   original-url: github.com/gibizer/envtest-linter

@@ -1,3 +1,4 @@
+
 #!/bin/bash
 #
 # Copyright 2022 The Go Authors. All rights reserved.
