@@ -1,1 +1,27 @@
 # envtest-linter
+
+Static analysis library for envtest test code
+
+## Checks
+| Check | Description
+|---|---|
+| [L001](linters/L001) | checks that Gomega's `Eventually` and `Consistently` blocks use a local Gomega instance for asserts
+
+
+## Adding a new check
+- Add a new package under [linters](linters) for the new check
+- Update the [README.md](README.md) with the description of the check
+- If the test data for the check has dependencies then
+  - Those dependencies needs to be imported in
+    [force_test_deps.go](force_test_deps.go)
+  - The [vendor](vendor) directory needs to be symlinked to the directory
+    holding the test data
+  - Need to run
+    ```shell
+    go get <dep>
+    go mod tidy
+    go mod vendor
+    ```
+This whole dance is needed as the
+[analysistest package](https://pkg.go.dev/golang.org/x/tools/go/analysis/analysistest)
+does not support Go Modules currently.

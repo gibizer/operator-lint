@@ -1,7 +1,7 @@
 package main
 
 import (
-	linters "github.com/gibizer/envtest-linter"
+	"github.com/gibizer/envtest-linter/linters/L001"
 	"golang.org/x/tools/go/analysis"
 )
 
@@ -9,7 +9,7 @@ type analyzerPlugin struct{}
 
 func (*analyzerPlugin) GetAnalyzers() []*analysis.Analyzer {
 	return []*analysis.Analyzer{
-		linters.TodoAnalyzer,
+		L001.LocalGomegaEventuallyAnalyzer,
 	}
 }
 
