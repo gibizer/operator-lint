@@ -3,9 +3,10 @@ package T001
 import (
 	"fmt"
 	"go/ast"
-	"go/token"
 
 	"golang.org/x/tools/go/analysis"
+
+	tools "github.com/gibizer/operator-lint/pkg"
 )
 
 const (
@@ -137,14 +138,14 @@ func checkExpectCalls(pass *analysis.Pass, body *ast.BlockStmt, gomegaArgName st
 				if call.Name == "Expect" {
 					// We have an expect call without a package name selector
 					if gomegaArgName == "" {
-						report(
+						tools.Report(
 							pass, call.Pos(), Name,
 							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Change the "+
 								"declaration of the function passed to the '%s' block to take a parameter with type "+
 								"'Gomega' and use that to call 'Expect'", blockName, blockName,
 						)
 					} else {
-						report(
+						tools.Report(
 							pass, call.Pos(), Name,
 							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Use '%s.Expect'",
 							blockName, gomegaArgName,
@@ -166,14 +167,14 @@ func checkExpectCalls(pass *analysis.Pass, body *ast.BlockStmt, gomegaArgName st
 				xId, ok := call.X.(*ast.Ident)
 				if ok && xId.Name != gomegaArgName {
 					if gomegaArgName == "" {
-						report(
+						tools.Report(
 							pass, call.Pos(), Name,
 							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Change the "+
 								"declaration of the function passed to the '%s' block to take a parameter with type "+
 								"'Gomega' and use that to call 'Expect'", blockName, blockName,
 						)
 					} else {
-						report(
+						tools.Report(
 							pass, call.Pos(), Name,
 							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Use '%s.Expect'",
 							blockName, gomegaArgName,
@@ -185,8 +186,4 @@ func checkExpectCalls(pass *analysis.Pass, body *ast.BlockStmt, gomegaArgName st
 		}
 		return true
 	})
-}
-
-func report(pass *analysis.Pass, pos token.Pos, analyzerName string, format string, a ...any) {
-	pass.Reportf(pos, analyzerName+": "+format, a...)
 }
