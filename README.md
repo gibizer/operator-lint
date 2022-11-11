@@ -1,11 +1,17 @@
-# envtest-linter
+# operator-lint
 
-Static analysis library for envtest test code
+Static analysis library for k8s operators created by [operator-sdk](https://sdk.operatorframework.io/)
+
+## Usage
+```bash
+  go install github.com/gibizer/operator-lint/
+  go vet -vettool=$(which operator-lint)
+```
 
 ## Checks
-| Check | Description
-|---|---|
-| [L001](linters/L001) | checks that Gomega's `Eventually` and `Consistently` blocks use a local Gomega instance for asserts
+| Check | Category | Description
+|---|---|---|
+| [T001](linters/envtest/T001) | EnvTest | checks that Gomega's `Eventually` and `Consistently` blocks use a local Gomega instance for asserts
 
 
 ## Adding a new check

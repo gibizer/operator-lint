@@ -4,7 +4,7 @@ build: test
 
 .PHONY: clean
 clean:
-	rm plugin.so
+	go clean
 
 .PHONY: test
 test:
@@ -12,4 +12,4 @@ test:
 
 .PHONY: run
 run: build
-	go vet -vettool=./envtest-linter
+	go vet -vettool=./operator-lint
