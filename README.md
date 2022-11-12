@@ -1,3 +1,4 @@
+[![pre-commit.ci status](https://results.pre-commit.ci/badge/github/gibizer/operator-lint/main.svg)](https://results.pre-commit.ci/latest/github/gibizer/operator-lint/main)
 # operator-lint
 
 Static analysis library for k8s operators created by [operator-sdk](https://sdk.operatorframework.io/)
