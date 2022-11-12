@@ -9,5 +9,5 @@ import (
 
 func TestC001(t *testing.T) {
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, C001.Linter, "a")
+	analysistest.Run(t, testdata, C001.NewAnalyzer(), "a")
 }

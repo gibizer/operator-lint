@@ -1,12 +1,12 @@
 package T001
 
 import (
-	"fmt"
 	"go/ast"
+	"strings"
 
 	"golang.org/x/tools/go/analysis"
 
-	tools "github.com/gibizer/operator-lint/pkg"
+	b "github.com/gibizer/operator-lint/pkg/base"
 )
 
 const (
@@ -14,174 +14,120 @@ const (
 	Doc  = "Checks Eventually and Consistently Gomega blocks to alway use a local Gomega variable for asserts"
 )
 
-var Linter = &analysis.Analyzer{
-	Name: Name,
-	Doc:  Doc,
-	Run:  run,
+type Linter struct {
+	*b.BaseLinter
+}
+
+func NewAnalyzer() *analysis.Analyzer {
+	l := &Linter{}
+	l.BaseLinter = b.NewBaseLinter(Name, Doc, l)
+	return l.Analyzer
 }
 
 const (
-	GomegaImport = "\"github.com/onsi/gomega\""
+	GomegaPkg  = "\"github.com/onsi/gomega\""
+	GomegaType = "Gomega"
 )
 
-func run(pass *analysis.Pass) (interface{}, error) {
-	for _, file := range pass.Files {
+func (l *Linter) LintFile(file *ast.File) error {
 
-		var gomegaImportName string
-		var imported = false
-		for _, imp := range file.Imports {
-			if imp.Path.Value == GomegaImport {
-				imported = true
-				//				filename := pass.Fset.Position(imp.Pos()).Filename
-				//				log.Printf("L001 on file %s", filename)
-				if imp.Name == nil {
-					gomegaImportName = "gomega"
-				} else if imp.Name.Name == "." {
-					gomegaImportName = ""
-				} else {
-					gomegaImportName = imp.Name.Name
-				}
-			}
-		}
+	imp := b.ImportSpec(file, GomegaPkg)
+	if imp == nil {
+		return nil
+	}
 
-		if !imported {
-			continue
-		}
+	var gomegaTypeName string
+	if imp.Name == nil {
+		gomegaTypeName = "gomega." + GomegaType
+	} else if imp.Name.Name == "." {
+		gomegaTypeName = GomegaType
+	} else {
+		gomegaTypeName = imp.Name.Name + "." + GomegaType
+	}
 
-		ast.Inspect(file, func(node ast.Node) bool {
-			switch x := node.(type) {
-			case *ast.CallExpr:
-				var callName string
-				switch call := x.Fun.(type) {
-				case *ast.Ident:
-					if call.Name != "Eventually" && call.Name != "Consistently" {
-						return true
-					}
-					callName = call.Name
-				case *ast.SelectorExpr:
-
-					if call.Sel.Name != "Eventually" && call.Sel.Name != "Consistently" {
-						return true
-					}
-					callName = call.Sel.Name
-				}
-
-				anonF, err := firstArgAsFuncLit(x)
-				if err != nil {
-					// if the first arg is not a function then this is
-					// a call with value that we can ignore here
-					// https://onsi.github.io/gomega/#category-1-making-codeeventuallycode-assertions-on-values
-					return true
-				}
-
-				gomegaArgName, _ := gomegaArgName(anonF, gomegaImportName)
-
-				checkExpectCalls(pass, anonF.Body, gomegaArgName, callName)
-				// need to go deeper as there can be nested Eventually blocks
+	ast.Inspect(file, func(node ast.Node) bool {
+		switch x := node.(type) {
+		case *ast.CallExpr:
+			callName := b.ExprLastName(x.Fun)
+			if callName != "Eventually" && callName != "Consistently" {
 				return true
 			}
+			anonF := firstArgAsFuncLit(x)
+			if anonF == nil {
+				// If the first arg is not a function then this is
+				// a call with value that we can ignore here
+				// https://onsi.github.io/gomega/#category-1-making-codeeventuallycode-assertions-on-values
+				// Or a non anonymous function is passed. In that case
+				// we would need to look up that function to analyse it. But
+				// that is a TODO.
+				return true
+			}
+
+			gomegaArgName := l.gomegaArgName(anonF, gomegaTypeName)
+
+			l.checkExpectCalls(anonF.Body, gomegaArgName, callName)
+			// need to go deeper as there can be nested Eventually blocks
 			return true
-		})
-	}
-	return nil, nil
+		}
+		return true
+	})
+	return nil
 }
 
-func firstArgAsFuncLit(f *ast.CallExpr) (*ast.FuncLit, error) {
+func firstArgAsFuncLit(f *ast.CallExpr) *ast.FuncLit {
 	if len(f.Args) == 0 {
-		return nil, fmt.Errorf("missing func declaration as first argument")
+		return nil
 	}
 	flit, ok := f.Args[0].(*ast.FuncLit)
 	if !ok {
-		return nil, fmt.Errorf("first argument is not a function but %T", f.Args[0])
+		return nil
 	}
-	return flit, nil
+	return flit
 }
 
-func gomegaArgName(f *ast.FuncLit, importName string) (string, error) {
-	if f.Type.Params.NumFields() != 1 {
-		return "", fmt.Errorf("anonymous function has no argument")
-	}
-	param := f.Type.Params.List[0]
-	switch x := param.Type.(type) {
-	case *ast.Ident:
-		if importName == "" {
-			if x.Name == "Gomega" {
-				return param.Names[0].Name, nil
-			}
-		} else {
-			if x.Name == importName+"."+"Gomega" {
-				return param.Names[0].Name, nil
-			}
-		}
-	case *ast.SelectorExpr:
-		xId, ok := x.X.(*ast.Ident)
-		if ok && xId.Name == importName && x.Sel.Name == "Gomega" {
-			return param.Names[0].Name, nil
+// gomegaArgName returns the name of the first Gomega argument of the function
+// returns "" if the function has no such argument
+func (l *Linter) gomegaArgName(f *ast.FuncLit, gomegaTypeName string) string {
+	for _, param := range f.Type.Params.List {
+		if b.ExprName(param.Type) == gomegaTypeName {
+			return param.Names[0].Name
 		}
 	}
-
-	return "", fmt.Errorf("anonymous function doesn't have Gomega argument")
+	return ""
 }
 
-func checkExpectCalls(pass *analysis.Pass, body *ast.BlockStmt, gomegaArgName string, blockName string) {
+func (l *Linter) checkExpectCalls(body *ast.BlockStmt, gomegaArgName string, blockName string) {
 	ast.Inspect(body, func(node ast.Node) bool {
 		switch x := node.(type) {
 		case *ast.CallExpr:
-			switch call := x.Fun.(type) {
-			case *ast.Ident: // We have a simple name as the call
-				if call.Name == "Eventually" || call.Name == "Consistently" {
-					// stop checking deeper based on the current block as there is
-					// a new nested Eventually / Consistently block. This is
-					// handled by the caller.
-					return false
-				}
-				if call.Name == "Expect" {
-					// We have an expect call without a package name selector
-					if gomegaArgName == "" {
-						tools.Report(
-							pass, call.Pos(), Name,
-							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Change the "+
-								"declaration of the function passed to the '%s' block to take a parameter with type "+
-								"'Gomega' and use that to call 'Expect'", blockName, blockName,
-						)
-					} else {
-						tools.Report(
-							pass, call.Pos(), Name,
-							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Use '%s.Expect'",
-							blockName, gomegaArgName,
-						)
-					}
-					return false
-				}
-			case *ast.SelectorExpr: // we have a <name>.<funcname> expression
-				if call.Sel.Name == "Eventually" || call.Sel.Name == "Consistently" {
-					// stop checking deeper based on the current block as there is
-					// a new nested Eventually / Consistently block. This is
-					// handled by the caller.
-					return false
-				}
-				if call.Sel.Name != "Expect" {
-					return true
-				}
-				// we have a <name>.Expect() expression
-				xId, ok := call.X.(*ast.Ident)
-				if ok && xId.Name != gomegaArgName {
-					if gomegaArgName == "" {
-						tools.Report(
-							pass, call.Pos(), Name,
-							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Change the "+
-								"declaration of the function passed to the '%s' block to take a parameter with type "+
-								"'Gomega' and use that to call 'Expect'", blockName, blockName,
-						)
-					} else {
-						tools.Report(
-							pass, call.Pos(), Name,
-							"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Use '%s.Expect'",
-							blockName, gomegaArgName,
-						)
-					}
-					return false
-				}
+			callName := b.ExprName(x.Fun)
+			if strings.HasSuffix(callName, "Eventually") || strings.HasSuffix(callName, "Consistently") {
+				// stop checking deeper based on the current block as there is
+				// a new nested Eventually / Consistently block. This
+				// nested block will be handled by the caller.
+				return false
+			}
+
+			if !strings.HasSuffix(callName, ".Expect") && callName != "Expect" {
+				return true
+			}
+
+			if gomegaArgName == "" {
+				l.Report(
+					x.Fun.Pos(),
+					"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Change the "+
+						"declaration of the function passed to the '%s' block to take a parameter with type "+
+						"'Gomega' and use that to call 'Expect'", blockName, blockName,
+				)
+				return false
+			}
+			if !strings.HasPrefix(callName, gomegaArgName+".") {
+				l.Report(
+					x.Fun.Pos(),
+					"'Expect' in the '%s' block should be called via a local 'Gomega' parameter. Use '%s.Expect'",
+					blockName, gomegaArgName,
+				)
+				return false
 			}
 		}
 		return true

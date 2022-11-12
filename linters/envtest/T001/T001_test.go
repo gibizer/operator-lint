@@ -7,7 +7,7 @@ import (
 	"golang.org/x/tools/go/analysis/analysistest"
 )
 
-func TestL001(t *testing.T) {
+func TestT001(t *testing.T) {
 	testdata := analysistest.TestData()
-	analysistest.Run(t, testdata, T001.Linter, "a")
+	analysistest.Run(t, testdata, T001.NewAnalyzer(), "a")
 }
