@@ -44,6 +44,5 @@ repos:
     - id: detect-private-key
     - id: end-of-file-fixer
       exclude: ^vendor
-    - id: no-commit-to-branch
     - id: trailing-whitespace
       exclude: ^vendor
