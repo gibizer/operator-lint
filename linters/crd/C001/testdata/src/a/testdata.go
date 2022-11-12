@@ -32,7 +32,7 @@ type Good struct {
 
 	NotCommentedField2 string `json:"notCommentedField2"`
 
-	NotCommentedField3 string `json:"notCommentedField2,omitempty"`
+	NotCommentedField3 string `json:"notCommentedField3,omitempty"`
 }
 
 type Bad struct {
