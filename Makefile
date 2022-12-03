@@ -13,3 +13,7 @@ test:
 .PHONY: run
 run: build
 	go vet -vettool=./operator-lint
+
+.PHONY: new-lint
+new-lint:
+	lint-template/new-lint.sh

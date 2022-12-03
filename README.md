@@ -20,7 +20,7 @@ Static analysis library for k8s operators created by [operator-sdk](https://sdk.
 
 
 ## Adding a new check
-- Add a new package under [linters](linters) for the new check
+- Use `make new-lint` to generate a new empty linter under `linters`.
 - Update the [README.md](README.md) with the description of the check
 - If the test data for the check has dependencies then
   - Those dependencies needs to be imported in
