@@ -14,7 +14,9 @@ Static analysis library for k8s operators created by [operator-sdk](https://sdk.
 |---|---|---|
 | [T001](linters/envtest/T001) | EnvTest | checks that Gomega's `Eventually` and `Consistently` blocks use a local Gomega instance for asserts
 |---|---|---|
-| [C001](linters/crd/C001) | CRD | checks incompatible kubebuilder markers and golang tags on CRD fields
+| [C001](linters/crd/C001) | CRD | detects incompatible `Required` and `Optional` kubebuilder markers
+| [C002](linters/crd/C002) | CRD | detects incompatible `Required` kubebuilder marker and `omitemty` golang tag
+
 
 
 ## Adding a new check
