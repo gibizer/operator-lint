@@ -16,6 +16,7 @@ Static analysis library for k8s operators created by [operator-sdk](https://sdk.
 |---|---|---|
 | [C001](linters/crd/C001) | CRD | detects incompatible `Required` and `Optional` kubebuilder markers
 | [C002](linters/crd/C002) | CRD | detects incompatible `Required` kubebuilder marker and `omitemty` golang tag
+| [C003](linters/crd/C003) | CRD | detects incompatible defaulting via `Optional` kubebuilder marker and `omitemty` golang tag
 
 
 
