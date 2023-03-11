@@ -16,3 +16,7 @@ server side. The `0` value is the *empty* value of `int32` and `omitempty`
 means if the value is empty then the field is not emitted when serialized to
 json. Therefore the server won't get the field `replicas` and therefore uses
 the default value `1` from the kubebuilder default annotation.
+
+Similary this issue can happen when a defaulting webhook deserializing the json
+request, run the specific defaulting code and then serializing the struct back
+to json.
