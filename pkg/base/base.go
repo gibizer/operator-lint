@@ -20,6 +20,7 @@ type BaseLinter struct {
 	*analysis.Analyzer
 	Pass *analysis.Pass
 	log  *log.Logger
+	skip *bool
 }
 
 func NewBaseLinter(Name string, Doc string, l FileLinter) *BaseLinter {
@@ -33,10 +34,17 @@ func NewBaseLinter(Name string, Doc string, l FileLinter) *BaseLinter {
 	base.FileLinter = l
 	base.Analyzer.Run = base.baseRun
 
+	base.skip = base.Analyzer.Flags.Bool(
+		"skip", false, "Use to skip the given check")
+
 	return base
 }
 
 func (l *BaseLinter) baseRun(pass *analysis.Pass) (interface{}, error) {
+	if *l.skip {
+		return nil, nil
+	}
+
 	l.Pass = pass
 	for _, file := range l.Pass.Files {
 		err := l.LintFile(file)
