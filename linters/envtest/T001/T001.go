@@ -48,7 +48,7 @@ func (l *Linter) LintFile(file *ast.File) error {
 	ast.Inspect(file, func(node ast.Node) bool {
 		switch x := node.(type) {
 		case *ast.CallExpr:
-			callName := b.ExprLastName(x.Fun)
+			callName := l.ExprLastName(x.Fun)
 			if callName != "Eventually" && callName != "Consistently" {
 				return true
 			}
@@ -89,7 +89,7 @@ func firstArgAsFuncLit(f *ast.CallExpr) *ast.FuncLit {
 // returns "" if the function has no such argument
 func (l *Linter) gomegaArgName(f *ast.FuncLit, gomegaTypeName string) string {
 	for _, param := range f.Type.Params.List {
-		if b.ExprName(param.Type) == gomegaTypeName {
+		if l.ExprName(param.Type) == gomegaTypeName {
 			return param.Names[0].Name
 		}
 	}
@@ -100,7 +100,7 @@ func (l *Linter) checkExpectCalls(body *ast.BlockStmt, gomegaArgName string, blo
 	ast.Inspect(body, func(node ast.Node) bool {
 		switch x := node.(type) {
 		case *ast.CallExpr:
-			callName := b.ExprName(x.Fun)
+			callName := l.ExprName(x.Fun)
 			if strings.HasSuffix(callName, "Eventually") || strings.HasSuffix(callName, "Consistently") {
 				// stop checking deeper based on the current block as there is
 				// a new nested Eventually / Consistently block. This
