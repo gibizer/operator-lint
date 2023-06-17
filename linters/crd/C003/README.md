@@ -20,3 +20,16 @@ the default value `1` from the kubebuilder default annotation.
 Similary this issue can happen when a defaulting webhook deserializing the json
 request, run the specific defaulting code and then serializing the struct back
 to json.
+
+This behavior does not cause an issue if the field's default value is the same
+as the golang empty value of the type of the field.
+
+If `omitempty` cannot be removed from the field definition (e.g. nested struct
+defaulting), then one possible way out is to switch the field type to be a
+pointer. E.g. `Replicas *int32` in the above example. This introduces a new
+empty value to the field `nil`. So if the user never wants to explicitly set
+`nil`, then it is a good value to represent the `unset` state via `omitempty`.
+
+The C003 check will not report an error for pointer type fields or field
+definitions where the kubebuilder default value is the same as the golang
+empty value of the type of the field.
