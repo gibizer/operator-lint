@@ -18,7 +18,21 @@ Static analysis library for k8s operators created by [operator-sdk](https://sdk.
 | [C002](linters/crd/C002) | CRD | v0.1.0 | detects incompatible `Required` kubebuilder marker and `omitemty` golang tag
 | [C003](linters/crd/C003) | CRD | v0.2.2 | detects incompatible defaulting via `Optional` kubebuilder marker and `omitemty` golang tag
 
+### Flags
+Command line flags can be used to configure each check in the form of:
+```bash
+go vet -vettool=$(which operator-lint) -<check name>.<flag>
+```
 
+Common flags supported by each check:
+* `<check name>.skip`: can be used to disable the given check. E.g. the
+  following command will not execute the check C003:
+  ```bash
+  go vet -vettool=$(which operator-lint) -C003.skip
+  ```
+
+You can use `go vet -vettool=$(which operator-lint) -flags` to print out all
+the supported flags
 
 ## Adding a new check
 - Use `make new-lint` to generate a new empty linter under `linters`.
