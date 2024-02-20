@@ -77,6 +77,8 @@ func (l *BaseLinter) ExprName(expr ast.Expr) string {
 		return l.ExprName(x.Key) + ":" + l.ExprName(x.Value)
 	case *ast.InterfaceType:
 		return "interface{}"
+	case *ast.IndexExpr:
+		return l.ExprName(x.X) + "[" + l.ExprName(x.Index) + "]"
 	default:
 		l.Debug(x.Pos(), "unhandled type")
 		panic(fmt.Errorf("unhandled type %T", expr))
